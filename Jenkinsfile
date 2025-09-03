@@ -21,7 +21,8 @@ pipeline {
     }
     stage('Test') {
       steps {
-        bat "mvn -B test"
+        // Force headless mode on Jenkins
+        bat "mvn -B test -Dheadless=true"
       }
     }
   }
