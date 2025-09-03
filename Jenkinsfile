@@ -4,25 +4,35 @@ pipeline {
   options { timestamps() }
   environment {
     PLAYWRIGHT_BROWSERS_PATH = '.playwright'
+    MVN_COMMON = '-B -Dmaven.repo.local=.m2/repo --no-transfer-progress'
   }
   stages {
     stage('Checkout') {
-      steps { checkout scm }
+      steps {
+        // If you configure "Shallow clone" in the Git section of the job UI, that helps too
+        checkout scm
+      }
     }
+
     stage('Build (no tests)') {
       steps {
-        bat "mvn -B -DskipTests clean install --no-transfer-progress"
+        // Parallelize Maven: -T 1C uses one thread per CPU core
+        bat "mvn %MVN_COMMON% -T 1C -DskipTests clean install"
       }
     }
-    stage('Install Playwright browsers') {
+
+    stage('Install Playwright browsers (if needed)') {
+      when {
+        expression { return !fileExists('.playwright') || !fileExists('.playwright/registry.lock') }
+      }
       steps {
-        bat "mvn exec:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args=\"install --with-deps\""
+        bat 'mvn %MVN_COMMON% exec:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps"'
       }
     }
-    stage('Test') {
+
+    stage('Test (headless on CI)') {
       steps {
-        // Force headless mode on Jenkins
-        bat "mvn -B test -Dheadless=true"
+        bat 'mvn %MVN_COMMON% test -Dheadless=true'
       }
     }
   }
