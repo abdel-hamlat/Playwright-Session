@@ -1,4 +1,4 @@
-package googleDommain.smokeTestUI;
+package QABrainsDomain.smokeTestUI;
 
 import org.QABrains.QABrainUser;
 import org.QABrains.QaBrainsBase;
