@@ -18,7 +18,7 @@ public class UserLoginTest {
 
     @BeforeAll
     void suiteSetup() {
-        qBBase.start(false);
+        qBBase.start();
         qBBase.newPageMaximized(); // headless=false, maximized=true
         qBBase.googleNavTo();
 
@@ -75,5 +75,6 @@ public class UserLoginTest {
     @AfterAll
     void suiteTearDown() {
         qBBase.closeContext();
+        qBBase.stop();
     }
 }

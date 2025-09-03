@@ -11,19 +11,38 @@ public class PlaywrightFactory {
     protected BrowserContext context;
     protected Page page;
 
-    public void start(boolean headless) {
+    // Call this in tests: qBBase.start();
+    public void start() {
+        // Detect CI (Jenkins sets these). Locally these are null.
+        boolean isCI = System.getenv("JENKINS_HOME") != null
+                || System.getenv("BUILD_ID") != null
+                || System.getenv("CI") != null;
+
+        // Default: Jenkins=headless true, Local=headless false
+        String defaultHeadless = isCI ? "true" : "false";
+        boolean headless = Boolean.parseBoolean(System.getProperty("headless", defaultHeadless));
+
+        BrowserType.LaunchOptions launch = new BrowserType.LaunchOptions().setHeadless(headless);
+        if (!headless) {
+            launch.setArgs(Arrays.asList("--start-maximized"));
+        }
+
         playwright = Playwright.create();
-        browser = playwright.chromium().launch(
-                new BrowserType.LaunchOptions()
-                        .setHeadless(headless)
-                        .setArgs(Arrays.asList("--start-maximized"))
-        );
+        browser = playwright.chromium().launch(launch);
     }
 
     public void newPageMaximized() {
         context = browser.newContext(new Browser.NewContextOptions().setViewportSize(null));
         page = context.newPage();
     }
+
+    public void waitForElementVisible(String selector) {
+        page.locator(selector).waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
+    }
+
+    public Page page() {
+        return page;
+    } // optional getter if you need it
 
     public void closeContext() {
         if (context != null) context.close();
@@ -33,9 +52,4 @@ public class PlaywrightFactory {
         if (browser != null) browser.close();
         if (playwright != null) playwright.close();
     }
-
-    public void waitForElementVisible(String selector) {
-        page.locator(selector).waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
-    }
-
 }
